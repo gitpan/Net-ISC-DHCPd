@@ -27,16 +27,27 @@ lib/Net/ISC/DHCPd/Config/SharedNetwork.pm
 lib/Net/ISC/DHCPd/Config/Subnet.pm
 lib/Net/ISC/DHCPd/Leases.pm
 lib/Net/ISC/DHCPd/Leases/Lease.pm
+lib/Net/ISC/DHCPd/OMAPI.pm
+lib/Net/ISC/DHCPd/OMAPI/Actions.pm
+lib/Net/ISC/DHCPd/OMAPI/Control.pm
+lib/Net/ISC/DHCPd/OMAPI/Group.pm
+lib/Net/ISC/DHCPd/OMAPI/Host.pm
+lib/Net/ISC/DHCPd/OMAPI/Lease.pm
+lib/Net/ISC/DHCPd/OMAPI/Meta/Attribute.pm
+lib/Net/ISC/DHCPd/OMAPI/Meta/Class.pm
 lib/Net/ISC/DHCPd/Process.pm
+lib/Net/ISC/DHCPd/Types.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
 t/00-load.t
+t/05-types.t
 t/10-config-generate.t
 t/10-config-parse.t
 t/10-leases-parse.t
 t/15-server.t
+t/20-omapi.t
 t/99-benchmark-config-parse.pl
 t/data/dhcpd.conf
 t/data/dhcpd.leases

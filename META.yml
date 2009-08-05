@@ -6,7 +6,7 @@ build_requires:
   Test::More: 0
   Test::Pod: 0
 distribution_type: module
-generated_by: 'Module::Install version 0.77'
+generated_by: 'Module::Install version 0.79'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -18,9 +18,11 @@ no_index:
     - t
 requires:
   File::Path: 2
+  IO::Pty: 1
   Moose: 0.8
+  MooseX::Types: 0.1
   NetAddr::IP: 4
   POE::Filter::DHCPd::Lease: 0.04
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.02
+version: 0.02_0003
