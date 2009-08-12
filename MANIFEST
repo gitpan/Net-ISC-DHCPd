@@ -30,6 +30,7 @@ lib/Net/ISC/DHCPd/Leases/Lease.pm
 lib/Net/ISC/DHCPd/OMAPI.pm
 lib/Net/ISC/DHCPd/OMAPI/Actions.pm
 lib/Net/ISC/DHCPd/OMAPI/Control.pm
+lib/Net/ISC/DHCPd/OMAPI/Failover.pm
 lib/Net/ISC/DHCPd/OMAPI/Group.pm
 lib/Net/ISC/DHCPd/OMAPI/Host.pm
 lib/Net/ISC/DHCPd/OMAPI/Lease.pm
