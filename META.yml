@@ -28,4 +28,4 @@ requires:
   POE::Filter::DHCPd::Lease: 0.04
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.03
+version: 0.04
