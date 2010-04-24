@@ -3,9 +3,10 @@ abstract: 'Interacts with ISC DHCPd'
 author:
   - 'Jan Henning Thorsen, all rights reserved.'
 build_requires:
+  Benchmark: 1
   ExtUtils::MakeMaker: 6.42
-  Test::More: 0
-  Test::Pod: 0
+  Test::More: 0.9
+  Time::Local: 1.18
 configure_requires:
   ExtUtils::MakeMaker: 6.42
 distribution_type: module
@@ -21,11 +22,16 @@ no_index:
     - t
 requires:
   File::Path: 2
+  File::Temp: 0.2
   IO::Pty: 1
-  Moose: 0.8
-  MooseX::Types: 0.1
+  Moose: 0.9
+  MooseX::Types: 0.12
   NetAddr::IP: 4
   POE::Filter::DHCPd::Lease: 0.04
+  Time::HiRes: 1.9
 resources:
+  bugtracker: http://rt.cpan.org/NoAuth/Bugs.html?Dist=Net-ISC-DHCPd
+  homepage: http://search.cpan.org/dist/Net-ISC-DHCPd
   license: http://dev.perl.org/licenses/
-version: 0.05
+  repository: git://github.com/jhthorsen/net-isc-dhcpd.git
+version: 0.05_01
