@@ -1,5 +1,15 @@
 Revision history for Net-ISC-DHCPd
 
+0.07     Fri Jun 18 01:30:15 CEST 2010
+       - Add (RT58391) OMAPI lookup by hardware_address, even though
+         it does not appear to described in the dhcpd manual (?)
+         Contributor: Jeff Bair
+       - Add (RT58391) post check after OMAPI read() to see if lookup
+         attributes match retrieved data. This is because omapi/omshell
+         seem to have a bug where lease lookup with "state" is ignored.
+         This is subject for change!
+         Contributor: Jeff Bair
+
 0.06     Thu Jun 17 20:23:51 CEST 2010
        - Fix version number (didn't know _ made it a dev release)
        - Fix _DEBUG is default off (0)
