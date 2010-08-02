@@ -12,7 +12,7 @@ See L<Net::ISC::DHCPd::Config> for synopsis.
 
 use Moose::Role;
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 parent
 
@@ -34,19 +34,21 @@ The root node in the config tree.
 
 has root => (
     is => 'ro',
-    isa => 'Net::ISC::DHCPd::Config',
+    isa => 'Object',
     lazy => 1,
     weak_ref => 1,
-    default => sub {
-        my $obj = shift;
-
-        while(my $tmp = $obj->parent) {
-            ref($obj = $tmp) eq "Net::ISC::DHCPd::Config" and last;
-        }
-
-        return $obj;
-    },
+    builder => '_build_root',
 );
+
+sub _build_root {
+    my $obj = shift;
+
+    while(my $tmp = $obj->parent) {
+        blessed($obj = $tmp) eq 'Net::ISC::DHCPd::Config' and last;
+    }
+
+    return $obj;
+}
 
 =head2 depth
 
@@ -58,19 +60,21 @@ has depth => (
     is => 'ro',
     isa => 'Int',
     lazy => 1,
-    default => sub {
-        my $self = shift;
-        my $obj = $self;
-        my $i = 0;
-
-        while($obj = $obj->parent) {
-            $i++;
-            last if($obj == $self->root);
-        }
-
-        return $i;
-    },
+    builder => '_build_depth',
 );
+
+sub _build_depth {
+    my $self = shift;
+    my $obj = $self;
+    my $i = 0;
+
+    while($obj = $obj->parent) {
+        $i++;
+        last if($obj == $self->root);
+    }
+
+    return $i;
+}
 
 =head2 children
 
@@ -83,8 +87,10 @@ has children => (
     isa => 'ArrayRef',
     lazy => 1,
     auto_deref => 1,
-    default => sub { [] },
+    builder => '_build_children',
 );
+
+sub _build_children { [] }
 
 =head2 regex
 
@@ -95,6 +101,7 @@ Regex to match for the node to be added.
 has regex => (
     is => 'ro',
     isa => 'RegexpRef',
+    builder => '_build_regex',
 );
 
 =head2 endpoint
@@ -108,26 +115,51 @@ Will not be used if the node does not have any possible L<children>.
 has endpoint => (
     is => 'ro',
     isa => 'Maybe[RegexpRef]',
-    default => sub { qr" ^ \s* } \s* $ "x },
+    builder => '_build_endpoint',
 );
+
+sub _build_endpoint { qr" ^ \s* } \s* $ "x }
+
+has _filehandle => (
+    is => 'ro',
+    lazy_build => 1,
+);
+
+sub _build__filehandle {
+    my $self = shift;
+    my $file;
+
+    # get filehandle from parent to prevent seeking file from beginning
+    if(my $parent = $self->parent) {
+        return $parent->_filehandle;
+    }
+
+    $file = $self->file;
+
+    if($file->is_relative and !-e $file) {
+        $file = Path::Class::File->new($self->root->file->dir, $file);
+    }
+
+    return $file->openr;
+}
+
 
 =head1 METHODS
 
 =head2 parse
 
- $int = $self->parse;
+ $int = $self->parse
 
 Parses a current node recursively. Does this by reading line by line from
-L<$self-E<gt>root-E<gt>filehandle>, and use the rules from the possible
-child elements and endpoint.
+L<file>, and use the rules from the possible child elements and endpoint.
 
 =cut
 
 sub parse {
-    my $self     = shift;
-    my $fh       = $self->root->filehandle;
+    my $self = shift;
+    my $fh = $self->_filehandle;
     my $endpoint = $self->endpoint;
-    my $n        = 0;
+    my $n = 0;
 
     LINE:
     while(++$n) {
@@ -159,16 +191,16 @@ sub parse {
         CHILD:
         for my $child ($self->children) {
             my @c   = $line =~ $child->regex or next CHILD;
-            my $add = "add_" .lc +(ref($child) =~ /::(\w+)$/)[0];
+            my $add = 'add_' .lc +(ref($child) =~ /::(\w+)$/)[0];
             my $new = $self->$add( $child->captured_to_args(@c) );
 
-            $n += $new->parse if(@_ = $new->children);
+            $n += $new->parse('recursive') if(@_ = $new->children);
 
             last CHILD;
         }
     }
 
-    return $n ? $n : "0e0";
+    return $n ? $n : '0e0';
 }
 
 =head2 captured_to_args
@@ -207,17 +239,19 @@ construct the L<children> attribute.
 sub create_children {
     my $self = shift;
     my $meta = $self->meta;
-    my @list = @_;
+    my @children = @_;
 
-    for my $obj (@list) {
+    for my $obj (@children) {
         my $class = $obj; # copy classname
         my $name  = lc +($class =~ /::(\w+)$/)[0];
-        my $attr  = $name ."s";
+        my $attr  = $name .'s';
+
+        Class::MOP::load_class($class);
 
         unless($meta->get_attribute($attr)) {
             $meta->add_attribute($attr => (
-                is => "rw",
-                isa => "ArrayRef",
+                is => 'rw',
+                isa => 'ArrayRef',
                 lazy => 1,
                 auto_deref => 1,
                 default => sub { [] },
@@ -240,17 +274,15 @@ sub create_children {
             });
         }
 
-        # replace class bareword with object in @list
+        # replace class bareword with object in @children
         $obj = $class->new;
     }
 
     unless(blessed $self) {
-        $meta->add_attribute($meta->get_attribute('children')->clone(
-            default => sub { \@list },
-        ));
+        $meta->add_method(_build_children => sub { \@children });
     }
 
-    return \@list;
+    return \@children;
 }
 
 =head2 generate_config_from_children
@@ -263,19 +295,25 @@ Loops all child node and calls L<generate()>.
 
 sub generate_config_from_children {
     my $self = shift;
-    my $indent = $self->parent ? (' ' x 4) : '';
+    my $indent = '';
     my @text;
 
-    for(reverse $self->children) {
-        my($attr) = lc +((blessed $_) =~ /::(\w+)$/ )[0] ."s";
+    if($self->parent and !$self->can('generate_with_include')) {
+        $indent = ' ' x 4;
+    }
 
-        for my $child ($self->$attr) {
-            push @text, map { "$indent$_" } $child->generate;
+    for(reverse $self->children) {
+        my($attr) = lc +((blessed $_) =~ /::(\w+)$/ )[0] .'s';
+
+        for my $node ($self->$attr) {
+            push @text, map { "$indent$_" } $node->generate;
         }
     }
 
     return join "\n", @text;
 }
+
+=head1 COPYRIGHT & LICENSE
 
 =head1 AUTHOR
 

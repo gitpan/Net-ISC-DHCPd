@@ -25,7 +25,7 @@ use NetAddr::IP;
 
 with 'Net::ISC::DHCPd::Config::Role';
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 upper
 
@@ -53,17 +53,13 @@ has lower => (
     isa => 'NetAddr::IP',
 );
 
-=head2 regex
-
-=cut
-
-has '+regex' => (
-    default => sub { qr{^\s* range \s (\S+) \s (\S*) ;}x },
-);
+sub _build_regex { qr{^\s* range \s (\S+) \s (\S*) ;}x }
 
 =head1 METHODS
 
 =head2 captured_to_args
+
+See L<Net::ISC::DHCPd::Config::Role::captured_to_args()>.
 
 =cut
 
@@ -76,11 +72,16 @@ sub captured_to_args {
 
 =head2 generate
 
+See L<Net::ISC::DHCPd::Config::Role::generate()>.
+
 =cut
 
 sub generate {
-    return sprintf("range %s %s;", $_[0]->lower->addr, $_[0]->upper->addr);
+    my $self = shift;
+    return 'range ' .$self->lower->addr .' ' .$self->upper->addr .';';
 }
+
+=head1 COPYRIGHT & LICENSE
 
 =head1 AUTHOR
 

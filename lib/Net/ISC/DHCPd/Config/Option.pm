@@ -19,7 +19,7 @@ use Moose;
 
 with 'Net::ISC::DHCPd::Config::Role';
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 name
 
@@ -60,17 +60,13 @@ has quoted => (
     isa => 'Bool',
 );
 
-=head2 regex
-
-=cut
-
-has '+regex' => (
-    default => sub { qr{^\s* option \s (\S+) \s (.*) ;}x },
-);
+sub _build_regex { qr{^\s* option \s (\S+) \s (.*) ;}x }
 
 =head1 METHODS
 
 =head2 captured_to_args
+
+See L<Net::ISC::DHCPd::Config::Role::captured_to_args()>.
 
 =cut
 
@@ -91,18 +87,18 @@ sub captured_to_args {
 
 =head2 generate
 
+See L<Net::ISC::DHCPd::Config::Role::generate()>.
+
 =cut
 
 sub generate {
     my $self = shift;
+    my $format = $self->quoted ? qq(option %s "%s";) : qq(option %s %s;);
 
-    if($self->quoted) {
-        return sprintf qq(option %s "%s";), $self->name, $self->value;
-    }
-    else {
-        return sprintf qq(option %s %s;), $self->name, $self->value;
-    }
+    return sprintf $format, $self->name, $self->value;
 }
+
+=head1 COPYRIGHT & LICENSE
 
 =head1 AUTHOR
 

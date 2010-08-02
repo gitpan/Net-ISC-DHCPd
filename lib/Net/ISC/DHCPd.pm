@@ -6,7 +6,7 @@ Net::ISC::DHCPd - Interacts with ISC DHCPd
 
 =head1 VERSION
 
-0.07
+0.08
 
 =head1 SYNOPSIS
 
@@ -22,15 +22,15 @@ See tests for more documentation.
 
 use Moose;
 use Moose::Util::TypeConstraints;
-use Net::ISC::DHCPd::Types ':all';
-use File::Basename;
-use File::Path;
-use File::Temp;
+use MooseX::Types::Path::Class qw(File);
 use Net::ISC::DHCPd::Process;
+use Net::ISC::DHCPd::Types ':all';
+use File::Temp;
+use Path::Class::Dir;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 config
 
@@ -102,7 +102,7 @@ has binary => (
 
 =head2 pidfile
 
- $path_to_pidfile = $self->pidfile;
+ $path_class_object = $self->pidfile;
 
 Default: /var/run/dhcp3-server/dhcpd.pid
 
@@ -110,8 +110,10 @@ Default: /var/run/dhcp3-server/dhcpd.pid
 
 has pidfile => (
     is => 'ro',
-    isa => 'Str',
-    default => '/var/run/dhcp3-server/dhcpd.pid',
+    isa => File,
+    default => sub {
+        Path::Class::File->new('', 'var', 'run', 'dhcp3-server', 'dhcpd.pid');
+    },
 );
 
 =head2 process
@@ -203,16 +205,13 @@ sub start {
 
     MAKE_DIR:
     for my $file ($self->config->file, $self->leases->file, $self->pidfile) {
-        my $dir = dirname $file;
+        my $dir = $file->dir;
         next if -d $dir;
 
-        eval {
-            File::Path::mkpath($dir);
-            1;
-        } or do {
-            $self->errstr("could not mkpath($dir): $@");
+        unless(eval { $dir->mkpath }) {
+            $self->errstr($@);
             return;
-        };
+        }
 
         unless(chown $user, $group, $dir) {
             $self->errstr("could not chown($user, $group $dir): $!");
@@ -405,6 +404,8 @@ Nito Martinez
 Alexey Illarionov
 
 Patrick
+
+napetrov
 
 =cut
 

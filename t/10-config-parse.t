@@ -8,9 +8,9 @@ use Test::More;
 
 my $count  = $ENV{'COUNT'} || 1;
 my $config = "./t/data/dhcpd.conf";
-my $lines  = 49;
+my $lines  = 51;
 
-plan tests => 1 + 24 * $count;
+plan tests => 1 + 28 * $count;
 
 use_ok("Net::ISC::DHCPd::Config");
 
@@ -18,13 +18,19 @@ my $time = timeit($count, sub {
     my $config = Net::ISC::DHCPd::Config->new(file => $config);
 
     is(ref $config, "Net::ISC::DHCPd::Config", "config object constructed");
-    is($config->parse, $lines, "all config lines parsed");
+    is($config->parse, $lines, "all config lines parsed") or BAIL_OUT 'failed to parse config';
 
     is(scalar(@_=$config->keyvalues), 3, "key values");
     is(scalar(@_=$config->optionspaces), 1, "option space");
     is(scalar(@_=$config->options), 1, "options");
     is(scalar(@_=$config->subnets), 1, "subnets");
     is(scalar(@_=$config->hosts), 1, "hosts");
+    is(scalar(@_=$config->includes), 1, "includes");
+
+    my $included = $config->includes->[0];
+    like($included->file, qr{foo-included.conf}, 'foo-included.conf got included');
+    is($included->parse, 6, 'included file got parsed');
+    is(scalar(@_=$included->hosts), 1, 'included file contains one host');
 
     my $space = $config->optionspaces->[0];
     is(scalar(@_=$space->options), 2, "option space options");

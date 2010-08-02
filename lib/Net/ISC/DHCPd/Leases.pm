@@ -9,8 +9,9 @@ Net::ISC::DHCPd::Leases - Parse ISC DHCPd leases
 use Moose;
 use Net::ISC::DHCPd::Leases::Lease;
 use POE::Filter::DHCPd::Lease;
+use MooseX::Types::Path::Class qw(File);
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 leases
 
@@ -38,32 +39,20 @@ Default: "/var/lib/dhcp3/dhcpd.leases"
 
 has file => (
     is => 'rw',
-    isa => 'Str',
-    default => "/var/lib/dhcp3/dhcpd.leases",
+    isa => File,
+    coerce => 1,
+    default => sub {
+        Path::Class::File->new('', 'var', 'lib', 'dhcp3', 'dhcpd.leases');
+    },
 );
 
-=head2 filehandle
-
- $glob = $self->filehandle;
- $bool = $self->has_filehandle;
- $self->clear_filehandle;
-
-Holds the filehande to l<file>.
-
-=cut
-
-has filehandle => (
+has _filehandle => (
     is => 'ro',
-    isa => 'GlobRef',
+    isa => 'IO::File',
     lazy_build => 1,
 );
 
-sub _build_filehandle {
-    my $self = shift;
-    my $file = $self->file or confess 'file attribute needs to be set';
-    open(my $FH, "<", $file) or confess "cannot open $file: $!";
-    return $FH;
-}
+sub _build__filehandle { shift->file->openr }
 
 has _parser => (
     is => 'ro',
@@ -73,20 +62,31 @@ has _parser => (
 
 =head1 METHODS
 
+=head2 filehandle
+
+This method will be deprecated.
+
+=cut
+
+sub filehandle {
+    Carp::cluck('->filehandle is replaced with private attribute _filehandle');
+    shift->_filehandle;
+}
+
 =head2 parse
 
  $int = $self->parse;
 
-Read lines from L<filehandle>, and parses every lease it can find.
+Read lines from L<file>, and parses every lease it can find.
 Returns the number of leases found. Will add each found lease to L<leases>.
 
 =cut
 
 sub parse {
-    my $self   = shift;
-    my $fh     = $self->filehandle;
+    my $self = shift;
+    my $fh = $self->_filehandle;
     my $parser = $self->_parser;
-    my $n      = 0;
+    my $n = 0;
 
     LINE:
     while(++$n) {
@@ -139,9 +139,11 @@ sub add_lease {
     return push @{$self->leases}, Net::ISC::DHCPd::Leases::Lease->new(\%lease);
 }
 
+=head1 COPYRIGHT & LICENSE
+
 =head1 AUTHOR
 
-Jan Henning Thorsen
+See L<Net::ISC::DHCPd>.
 
 =cut
 

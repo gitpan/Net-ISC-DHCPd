@@ -24,7 +24,7 @@ __PACKAGE__->create_children(qw/
     Net::ISC::DHCPd::Config::KeyValue
 /);
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 subnets
 
@@ -34,27 +34,27 @@ A list of parsed L<Net::ISC::DHCPd::Config::Subnet> objects.
 
 A list of parsed L<Net::ISC::DHCPd::Config::KeyValue> objects.
 
-=head2 regex
-
 =cut
 
-has '+regex' => (
-    default => sub { qr{^\s* shared-network}x },
-);
+sub _build_regex { qr{^\s* shared-network}x }
 
 =head1 METHODS
 
 =head2 generate
 
+See L<Net::ISC::DHCPd::Config::Role::generate()>.
+
 =cut
 
 sub generate {
     return(
-        "shared-network {",
+        'shared-network {',
         shift->generate_config_from_children,
-        "}",
+        '}',
     );
 }
+
+=head1 COPYRIGHT & LICENSE
 
 =head1 AUTHOR
 

@@ -16,47 +16,52 @@ See L<Net::ISC::DHCPd::Config> for synopsis.
 =cut
 
 use Moose;
+use Path::Class::File;
+use MooseX::Types::Path::Class qw(File);
 
 with 'Net::ISC::DHCPd::Config::Role';
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 file
 
  $string = $self->file;
 
+Holds a L<Path::Class::File> object.
+
 =cut
 
 has file => (
     is => 'rw',
-    isa => 'Str',
+    isa => File,
+    coerce => 1,
 );
 
-=head2 regex
-
-=cut
-
-has '+regex' => (
-    default => sub { qr{^\s* filename \s (\S+) ;}x },
-);
+sub _build_regex { qr{^\s* filename \s (\S+) ;}x }
 
 =head1 METHODS
 
 =head2 captured_to_args
 
+See L<Net::ISC::DHCPd::Config::Role::captured_to_args()>.
+
 =cut
 
 sub captured_to_args {
-    return { file => $_[1] };
+    return { file => Path::Class::File->new($_[1]) };
 }
 
 =head2 generate
 
+See L<Net::ISC::DHCPd::Config::Role::generate()>.
+
 =cut
 
 sub generate {
-    return sprintf q(filename %s;), shift->file;
+    return 'filename ' .shift->file .';';
 }
+
+=head1 COPYRIGHT & LICENSE
 
 =head1 AUTHOR
 

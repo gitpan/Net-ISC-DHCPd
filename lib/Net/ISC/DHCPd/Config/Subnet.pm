@@ -8,11 +8,6 @@ Net::ISC::DHCPd::Config::Subnet - Subnet config parameter
 
 use Moose;
 use NetAddr::IP;
-use Net::ISC::DHCPd::Config::Option;
-use Net::ISC::DHCPd::Config::Range;
-use Net::ISC::DHCPd::Config::Host;
-use Net::ISC::DHCPd::Config::Filename;
-use Net::ISC::DHCPd::Config::Pool;
 
 with 'Net::ISC::DHCPd::Config::Role';
 
@@ -24,7 +19,7 @@ __PACKAGE__->create_children(qw/
     Net::ISC::DHCPd::Config::Option
 /);
 
-=head1 OBJECT ATTRIBUTES
+=head1 ATTRIBUTES
 
 =head2 address
 
@@ -65,13 +60,13 @@ A list of parsed L<Net::ISC::DHCPd::Config::Pool> objects.
 
 =cut
 
-has '+regex' => (
-    default => sub { qr{^ \s* subnet \s (\S+) \s netmask \s (\S+) }x },
-);
+sub _build_regex { qr{^ \s* subnet \s (\S+) \s netmask \s (\S+) }x }
 
 =head1 METHODS
 
 =head2 captured_to_args
+
+See L<Net::ISC::DHCPd::Config::Role::captured_to_args()>.
 
 =cut
 
@@ -81,18 +76,22 @@ sub captured_to_args {
 
 =head2 generate
 
+See L<Net::ISC::DHCPd::Config::Role::generate()>.
+
 =cut
 
 sub generate {
     my $self = shift;
-    my $addr = $self->address;
+    my $net = $self->address;
 
     return(
-        sprintf("subnet %s netmask %s {", $addr->addr, $addr->mask),
+        'subnet ' .$net->addr .' netmask ' .$net->mask .' {',
         $self->generate_config_from_children,
-        "}",
+        '}',
     );
 }
+
+=head1 COPYRIGHT & LICENSE
 
 =head1 AUTHOR
 

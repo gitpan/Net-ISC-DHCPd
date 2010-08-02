@@ -21,17 +21,18 @@ no_index:
     - inc
     - t
 requires:
-  File::Path: 2
   File::Temp: 0.2
   IO::Pty: 1
   Moose: 0.9
   MooseX::Types: 0.12
+  MooseX::Types::Path::Class: 0.05
   NetAddr::IP: 4
   POE::Filter::DHCPd::Lease: 0.04
+  Path::Class: 0.19
   Time::HiRes: 1.9
 resources:
   bugtracker: http://rt.cpan.org/NoAuth/Bugs.html?Dist=Net-ISC-DHCPd
   homepage: http://search.cpan.org/dist/Net-ISC-DHCPd
   license: http://dev.perl.org/licenses/
   repository: git://github.com/jhthorsen/net-isc-dhcpd.git
-version: 0.07
+version: 0.08
