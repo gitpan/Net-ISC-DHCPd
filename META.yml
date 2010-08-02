@@ -35,4 +35,4 @@ resources:
   homepage: http://search.cpan.org/dist/Net-ISC-DHCPd
   license: http://dev.perl.org/licenses/
   repository: git://github.com/jhthorsen/net-isc-dhcpd.git
-version: 0.08
+version: 0.0801

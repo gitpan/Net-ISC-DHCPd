@@ -1,0 +1,88 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Net::ISC::DHCPd::OMAPI::Control - OMAPI control class</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#shutdown_server">shutdown_server</a></li>
+	</ul>
+
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#copyright___license">COPYRIGHT &amp; LICENSE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Net::ISC::DHCPd::OMAPI::Control - OMAPI control class</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="/home/jhthorsen/git/net-isc-dhcpd/html/lib/Net/ISC/DHCPd/OMAPI/Actions.html">the Net::ISC::DHCPd::OMAPI::Actions manpage</a>.
+<a href="/home/jhthorsen/git/net-isc-dhcpd/html/lib/Net/ISC/DHCPd/OMAPI/Meta/Attribute.html">the Net::ISC::DHCPd::OMAPI::Meta::Attribute manpage</a>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ use Net::ISC::DHCPd::OMAPI;</pre>
+<pre>
+ $omapi = Net::ISC::DHCPd::OMAPI-&gt;new(...);
+ $omapi-&gt;connect
+ $control = $omapi-&gt;new_object(&quot;control&quot;, { $attr =&gt; $value });
+ $control-&gt;$attr($value); # same as in constructor
+ $control-&gt;read; # retrieve server information
+ $control-&gt;set($attr =&gt; $value); # alter an update attr
+ $control-&gt;write; # write to server</pre>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="shutdown_server">shutdown_server</a></h2>
+<pre>
+ $bool = $self-&gt;shutdown_server;</pre>
+<p>Will shutdown the remote server. See <code>dhcpd.8</code> for details.</p>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<p>Most of the documentation is taken from <code>dhcpd(8)</code>.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright___license">COPYRIGHT &amp; LICENSE</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>See <a href="/home/jhthorsen/git/net-isc-dhcpd/html/lib/Net/ISC/DHCPd.html">the Net::ISC::DHCPd manpage</a>.</p>
+
+</body>
+
+</html>

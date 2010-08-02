@@ -1,0 +1,111 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Net::ISC::DHCPd::Process - Skeleton process class</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#new">new</a></li>
+		<li><a href="#pid">pid</a></li>
+		<li><a href="#kill">kill</a></li>
+	</ul>
+
+	<li><a href="#copyright___license">COPYRIGHT &amp; LICENSE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Net::ISC::DHCPd::Process - Skeleton process class</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+ package MyProcessRole;
+ use Moose;
+ use Net::ISC::DHCPd::Process</pre>
+<pre>
+ has program =&gt; ( is =&gt; 'rw' );
+ has args =&gt; ( is =&gt; 'rw' );
+ has user =&gt; ( is =&gt; 'rw' );
+ has group =&gt; ( is =&gt; 'rw' );</pre>
+<pre>
+ after BUILDALL =&gt; sub {
+   my $self = shift;
+   my $args = shift;</pre>
+<pre>
+   if($args-&gt;{'start'}) {
+     # spawn process
+   }
+ };</pre>
+<pre>
+ sub kill {
+   # kill process
+ }</pre>
+<pre>
+ MyProcessRole-&gt;meta-&gt;apply( Net::ISC::DHCPd::Process-&gt;meta );</pre>
+<pre>
+ 1;</pre>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="new">new</a></h2>
+<pre>
+ $self = $class-&gt;new($args)
+ $self = $class-&gt;new(%args)</pre>
+<p>Spawns a dhcpd process, running in the background.</p>
+<p>Args:</p>
+<pre>
+ program
+ args
+ user
+ group
+ start</pre>
+<p>
+</p>
+<h2><a name="pid">pid</a></h2>
+<pre>
+ $pid = $self-&gt;pid</pre>
+<p>
+</p>
+<h2><a name="kill">kill</a></h2>
+<pre>
+ $bool = $self-&gt;kill($signal)</pre>
+<p>
+</p>
+<hr />
+<h1><a name="copyright___license">COPYRIGHT &amp; LICENSE</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>See <a href="/home/jhthorsen/git/net-isc-dhcpd/html/lib/Net/ISC/DHCPd.html">the Net::ISC::DHCPd manpage</a>.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,133 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Net::ISC::DHCPd::OMAPI::Actions - Common actions on OMAPI objects</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#attributes">ATTRIBUTES</a></li>
+	<ul>
+
+		<li><a href="#parent">parent</a></li>
+		<li><a href="#errstr">errstr</a></li>
+		<li><a href="#extra_attributes">extra_attributes</a></li>
+	</ul>
+
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#read">read</a></li>
+		<li><a href="#write">write</a></li>
+		<li><a href="#unset">unset</a></li>
+		<li><a href="#remove">remove</a></li>
+	</ul>
+
+	<li><a href="#copyright___license">COPYRIGHT &amp; LICENSE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Net::ISC::DHCPd::OMAPI::Actions - Common actions on OMAPI objects</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module contains methods which can be called on each of the
+<a href="/home/jhthorsen/git/net-isc-dhcpd/html/lib/Net/ISC/DHCPd/OMAPI.html">the Net::ISC::DHCPd::OMAPI manpage</a> subclasses.</p>
+<p>Changing object attributes will not alter the attributes on server. To do
+so use <a href="#write">write</a> to update the server.</p>
+<p>
+</p>
+<hr />
+<h1><a name="attributes">ATTRIBUTES</a></h1>
+<p>
+</p>
+<h2><a name="parent">parent</a></h2>
+<pre>
+ $omapi_obj = $self-&gt;parent;</pre>
+<p>Returns the parent <a href="/home/jhthorsen/git/net-isc-dhcpd/html/lib/Net/ISC/DHCPd/OMAPI.html">the Net::ISC::DHCPd::OMAPI manpage</a> object.</p>
+<p>
+</p>
+<h2><a name="errstr">errstr</a></h2>
+<pre>
+ $str = $self-&gt;errstr;</pre>
+<p>Holds the latest error. Check this if a method returns empty list.</p>
+<p>
+</p>
+<h2><a name="extra_attributes">extra_attributes</a></h2>
+<pre>
+ $hash_ref = $self-&gt;extra_attributes;</pre>
+<p>Contains all attributes, which is not predefined by the OMAPI object.</p>
+<p>Note: If you ever need to use this - send me a bug report, since it
+means something is missing.</p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="read">read</a></h2>
+<pre>
+ $int = $self-&gt;read;</pre>
+<p>Open an object. Returns the number of attributes read. 0 = not in server.</p>
+<p>It looks up an object on server, by all the attributes that has action
+<code>lookup</code>. Will update all attributes in the local object, and setting
+all unknown objects in <a href="#extra_attributes">extra_attributes</a>.</p>
+<p>This is subject for change, but:</p>
+<p><code>read()</code> will also do a post check which checks if the retrieved values
+actually match the one used to lookup. If they do not match all retrieved
+data will be stored in <a href="#extra_attributes">extra_attributes</a> and this method will return
+zero (0).</p>
+<p>
+</p>
+<h2><a name="write">write</a></h2>
+<pre>
+ $bool = $self-&gt;write;
+ $bool = $self-&gt;write(@attributes);</pre>
+<p>Will set attributes on server object.</p>
+<p><code>@attributes</code> is by default every attribute on create, or every
+attribute with action &quot;modify&quot; on update.</p>
+<p>
+</p>
+<h2><a name="unset">unset</a></h2>
+<pre>
+ $bool = $self-&gt;unset(@attributes);</pre>
+<p>Will unset values for an object in DHCP server.</p>
+<p>
+</p>
+<h2><a name="remove">remove</a></h2>
+<pre>
+ $bool = $self-&gt;remove;</pre>
+<p>This method will remove the object from the server.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright___license">COPYRIGHT &amp; LICENSE</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>See <a href="/home/jhthorsen/git/net-isc-dhcpd/html/lib/Net/ISC/DHCPd.html">the Net::ISC::DHCPd manpage</a>.</p>
+
+</body>
+
+</html>
