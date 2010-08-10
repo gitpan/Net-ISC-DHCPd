@@ -4,6 +4,26 @@ package Net::ISC::DHCPd::Config::Subnet;
 
 Net::ISC::DHCPd::Config::Subnet - Subnet config parameter
 
+=head1 DESCRIPTION
+
+See L<Net::ISC::DHCPd::Config::Role> for methods and attributes without
+documentation.
+
+An instance from this class, comes from / will produce:
+
+    subnet $address_attribute_value \
+        netmask $address_attribute_value {
+        $options_attribute_value
+        $filename_attribute_value
+        $range_attribute_value
+        $pool_attribute_value
+        $hosts_attribute_value
+    }
+
+=head1 SYNOPSIS
+
+See L<Net::ISC::DHCPd::Config/SYNOPSIS>.
+
 =cut
 
 use Moose;
@@ -21,19 +41,6 @@ __PACKAGE__->create_children(qw/
 
 =head1 ATTRIBUTES
 
-=head2 address
-
-The ip address of this subnet.
-
-ISA: L<NetAddr::IP>
-
-=cut
-
-has address => (
-    is => 'ro',
-    isa => 'NetAddr::IP',
-);
-
 =head2 options
 
 A list of parsed L<Net::ISC::DHCPd::Config::Option> objects.
@@ -48,15 +55,36 @@ A list of parsed L<Net::ISC::DHCPd::Config::Host> objects.
 
 =head2 filenames
 
-A list of parsed L<Net::ISC::DHCPd::Config::Filename> objects.
+A list of parsed L<Net::ISC::DHCPd::Config::Filename> objects. There can
+be only be one node in this list.
 
-Should only be one item in this list.
+=cut
+
+before add_filename => sub {
+    if(0 < int @{ $_[0]->filenames }) {
+        confess 'Subnet cannot have more than one filename';
+    }
+};
 
 =head2 pools
 
 A list of parsed L<Net::ISC::DHCPd::Config::Pool> objects.
 
+=head2 address
+
+This attribute holds an instance of L<NetAddr::IP>, and represents
+the ip address of this subnet.
+
+=cut
+
+has address => (
+    is => 'ro',
+    isa => 'NetAddr::IP',
+);
+
 =head2 regex
+
+See L<Net::ISC::DHCPd::Config/regex>.
 
 =cut
 

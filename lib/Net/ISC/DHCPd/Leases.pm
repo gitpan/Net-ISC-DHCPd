@@ -4,6 +4,39 @@ package Net::ISC::DHCPd::Leases;
 
 Net::ISC::DHCPd::Leases - Parse ISC DHCPd leases
 
+=head1 SYNOPSIS
+
+    my $leases = Net::ISC::DHCPd::Leases->new(
+                     file => '/var/lib/dhcp3/dhcpd.leases',
+                 );
+
+    # parse the leases file
+    $leases->parse;
+
+    for my $lease ($leases->leases) {
+        say "lease has ended" if($lease->ends < time);
+    }
+
+    if(my $n = $leases->find_leases({ ends => time }) {
+        say "$n lease(s) has expired now";
+    }
+
+=head1 DESCRIPTION
+
+An object constructed from this class represents a leases file for
+the dhcpd server. It is read-only, so changes to the leases file
+must be done through a running server, using L<Net::ISC::DHCPd::OMAPI>.
+
+The object has one important attribute, which is L</leases>. This
+attribute holds a list of L<Net::ISC::DHCPd::Leases::Lease> objects
+constructed from all the leases found in the leases file.
+
+To parse the leases file, this module use L<POE::Filter::DHCPd::Lease>,
+but this can be customized by setting C<_parser> in the constructor.
+Even though it is possible, it is recommended to add features/
+bugfixes to L<POE::Filter::DHCPd::Lease|https://rt.cpan.org/Public/Dist/Display.html?Name=POE-Filter-DHCPd-Lease>
+instead.
+
 =cut
 
 use Moose;
@@ -15,25 +48,21 @@ use MooseX::Types::Path::Class qw(File);
 
 =head2 leases
 
- $array_ref = $self->leases;
-
-Holds all known lease objects.
+Holds a list of all the leases found after reading the leases file.
 
 =cut
 
 has leases => (
     is => 'ro',
     isa => 'ArrayRef',
+    auto_deref => 1,
     default => sub { [] },
 );
 
 =head2 file
 
- $str = $self->file;
-
-Holds the path to the dhcpd.leases file.
-
-Default: "/var/lib/dhcp3/dhcpd.leases"
+This attribute holds a L<Path::Class::File> object to the leases file.
+It is read-write and the default value is "/var/lib/dhcp3/dhcpd.leases".
 
 =cut
 
@@ -54,6 +83,11 @@ has _filehandle => (
 
 sub _build__filehandle { shift->file->openr }
 
+__PACKAGE__->meta->add_method(filehandle => sub {
+    Carp::cluck('->filehandle is replaced with private attribute _filehandle');
+    shift->_filehandle;
+});
+
 has _parser => (
     is => 'ro',
     isa => 'Object',
@@ -62,20 +96,7 @@ has _parser => (
 
 =head1 METHODS
 
-=head2 filehandle
-
-This method will be deprecated.
-
-=cut
-
-sub filehandle {
-    Carp::cluck('->filehandle is replaced with private attribute _filehandle');
-    shift->_filehandle;
-}
-
 =head2 parse
-
- $int = $self->parse;
 
 Read lines from L</file>, and parses every lease it can find.
 Returns the number of leases found. Will add each found lease to
@@ -108,12 +129,34 @@ sub parse {
     return $n;
 }
 
+=head2 find_leases
+
+This method will return zero or more L<Net::ISC::DHCPd::Leases::Lease>
+objects as a list. It takes a hash-ref which will be matched against
+the attributes of the child leases.
+
+=cut
+
+sub find_leases {
+    my $self = shift;
+    my $query = shift or return;
+    my @leases;
+
+    LEASE:
+    for my $lease ($self->leases) {
+        for my $key (keys %$query) {
+            next LEASE unless($lease->$key eq $query->{$key});
+        }
+        push @leases, $lease;
+    }
+
+    return @leases;
+}
+
 =head2 add_lease
 
- $bool = $self->add_lease($lease_obj);
-
-All another L<Net::ISC::DHCPd::Leases::Lease> object to the
-L</leases> attribute>.
+This method does not make much sense, and will probably get removed.
+See L</DESCRIPTION> for more details.
 
 =cut
 

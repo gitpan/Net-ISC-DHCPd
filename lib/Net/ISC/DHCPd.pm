@@ -6,17 +6,50 @@ Net::ISC::DHCPd - Interacts with ISC DHCPd
 
 =head1 VERSION
 
-0.0802
+0.09
 
 =head1 SYNOPSIS
 
- my $dhcpd = Net::ISC::DHCPd->new(
-                 config => { file => "path/to/config" },
-                 leases => { file => "path/to/leases" },
-                 omapi => { ... },
-             );
+    my $dhcpd = Net::ISC::DHCPd->new(
+                    config => { file => "path/to/config" },
+                    leases => { file => "path/to/leases" },
+                    omapi => { key => "some key" },
+                );
 
-See tests for more documentation.
+    $self->test('config') or die $self->errstr;
+
+    # start the dhcpd server
+    $dhcpd->start({
+        user => 'john-doe',
+        group => 'users',
+        interfaces => 'eth0',
+    }) or die $dhcpd->errstr;
+    print $dhcpd->status;
+
+    $dhcpd->restart or die $dhcpd->errstr;
+    print $dhcpd->status;
+
+    $dhcpd->stop or die $dhcpd->errstr;
+    print $dhcpd->status;
+
+See the tests bundled to this distribution for more examples.
+
+This module is subject for a major rewrite. Patches and comments
+are welcome - reason for this is that L<Net::ISC::DHCPd::Process>
+does not work as expected.
+
+=head1 DESCRIPTION
+
+This namespace contains three semi-separate projects, which this module
+binds together: L<dhcpd.conf|Net::ISC::DHCPd::Config>,
+L<dhcpd.leases|Net::ISC::DHCPd::Leases> and L<omapi|Net::ISC::DHCPd::OMAPI>.
+It is written with L<Moose> which provides classes and roles to represents
+things like a host, a lease or any other thing.
+
+The distribution as a whole is targeted an audience who configure and/or
+analyze the L<Internet Systems Consortium DHCP Server|http://www.isc.org/software/dhcp>.
+If you are not familiar with the server, check out
+L<the man pages|http://www.google.com/search?q=man+dhcpd>.
 
 =cut
 
@@ -28,16 +61,15 @@ use Net::ISC::DHCPd::Types ':all';
 use File::Temp;
 use Path::Class::Dir;
 
-our $VERSION = '0.0802';
+our $VERSION = '0.09';
 
 =head1 ATTRIBUTES
 
 =head2 config
 
- $config_obj = $self->config
- $bool = $self->has_config;
-
-Instance of L<Net::ISC::DHCPd::Config> class.
+This attribute holds a read-only L<Net::ISC::DHCPd::Config> object.
+It can be set from the constructor, using either an object or a hash-ref.
+The hash-ref will then be passed on to the constructor.
 
 =cut
 
@@ -48,14 +80,13 @@ has config => (
     lazy_build => 1,
 );
 
-*_build_config = sub { _build_child_obj(Config => @_) };
+__PACKAGE__->meta->add_method(_build_config => sub { _build_child_obj(Config => @_) });
 
 =head2 leases
 
- $leases_obj = $self->leases
- $bool = $self->has_leases;
-
-Instance of L<Net::ISC::DHCPd::Leases> class.
+This attribute holds a read-only L<Net::ISC::DHCPd::Leases> object.
+It can be set from the constructor, using either an object or a hash-ref.
+The hash-ref will then be passed on to the constructor.
 
 =cut
 
@@ -66,14 +97,13 @@ has leases => (
     lazy_build => 1,
 );
 
-*_build_leases = sub { _build_child_obj(Leases => @_) };
+__PACKAGE__->meta->add_method(_build_leases => sub { _build_child_obj(Leases => @_) });
 
 =head2 omapi
 
- $omapi_obj = $self->omapi;
- $bool = $self->has_omapi;
-
-Instance of L<Net::ISC::DHCPd::OMAPI> class.
+This attribute holds a read-only L<Net::ISC::DHCPd::OMAPI> object.
+It can be set from the constructor, using either an object or a hash-ref.
+The hash-ref will then be passed on to the constructor.
 
 =cut
 
@@ -84,27 +114,26 @@ has omapi => (
     lazy_build => 1,
 );
 
-*_build_omapi = sub { _build_child_obj(OMAPI => @_) };
+__PACKAGE__->meta->add_method(_build_omapi => sub { _build_child_obj(OMAPI => @_) });
 
 =head2 binary
 
- $path_to_binary = $self->binary;
-
-Default: "dhcpd3"
+This attribute holds a L<Path::Class::File> object to the dhcpd binary.
+It is read-only and the default is "dhcpd3".
 
 =cut
 
 has binary => (
     is => 'ro',
-    isa => 'Str',
+    isa => File,
+    coerce => 1,
     default => 'dhcpd3',
 );
 
 =head2 pidfile
 
- $path_class_object = $self->pidfile;
-
-Default: /var/run/dhcp3-server/dhcpd.pid
+This attribute holds a L<Path::Class::File> object to the dhcpd binary.
+It is read-only and the default is "/var/run/dhcp3-server/dhcpd.pid".
 
 =cut
 
@@ -118,13 +147,9 @@ has pidfile => (
 
 =head2 process
 
- $proc_obj = $self->process;
- $self->process($proc_obj);
- $self->process(\%args);
- $self->has_process;
- $self->clear_process;
-
-The object holding the dhcpd process.
+This attribute holds a read-only L<Net::ISC::DHCPd::Process> object.
+It can be set from the constructor, using either an object or a hash-ref.
+The hash-ref will then be passed on to the constructor.
 
 =cut
 
@@ -141,9 +166,7 @@ sub _build_process {
 
 =head2 errstr
 
- $string = $self->errstr;
-
-Holds the last know error.
+Holds the last know error as a plain string.
 
 =cut
 
@@ -157,25 +180,16 @@ has errstr => (
 
 =head2 start
 
- $bool = $self->start($args);
+    $any = $self->start(\%args);
 
 Will start the dhcpd server, as long as there is no existing process.
+See L</SYNOPSIS> for example. C<%args> can have C<user>, C<group> and
+C<interfaces> which all points to strings. This method returns and
+integer or undef: "1" means "started". "0" means "already running"
+and C<undef> means failed to start the server. Check L</errstr> on
+failure.
 
-C<$args>:
-
- {
-   user       || getpwuid $<
-   group      || getgrgid $<
-   interfaces || ""
- }
-
-Returns:
-
- 1     => OK
- 0     => Already running
- undef => Failed. Check errstr()
-
-TODO: Enable it to start the server as a differnet user/group.
+TODO: Enable it to start the server as a different user/group.
 
 =cut
 
@@ -189,9 +203,9 @@ sub start {
         return 0;
     }
 
-    $user  = $args->{'user'}  || getpwuid $<;
+    $user = $args->{'user'}  || getpwuid $<;
     $group = $args->{'group'} || getgrgid $<;
-    $args  = [
+    $args = [
         '-f', # foreground
         '-d', # log to STDERR
         '-cf' => $self->config->file,
@@ -200,8 +214,8 @@ sub start {
         $args->{'interfaces'} || q(),
     ];
 
-    $user  = scalar(getpwnam $user);
-    $group = scalar(getgrnam $group);
+    $user = getpwnam $user;
+    $group = getgrnam $group;
 
     MAKE_DIR:
     for my $file ($self->config->file, $self->leases->file, $self->pidfile) {
@@ -221,10 +235,9 @@ sub start {
 
     $self->process({
         program => $self->binary,
-        args    => $args,
-        user    => $user,
-        group   => $group,
-        start   => 1,
+        args => $args,
+        user => $user,
+        group => $group,
     });
 
     return $self->process ? 1 : undef;
@@ -234,10 +247,9 @@ sub start {
 
  $bool = $self->stop;
 
-Return:
-
- 1:     OK
- undef: Failed. Check errstr()
+This method will stop a running server. A true return value means that
+the server got stopped, while false means it could not be stopped.
+Check L<errstr> on failure.
 
 =cut
 
@@ -261,10 +273,9 @@ sub stop {
 
  $bool = $self->restart;
 
-Return:
-
- 1     => OK
- undef => Failed. Check errstr()
+This method will restart a running server or start a stopped server.
+A true return value means that the server got started, while false
+means it could not be started/restarted. Check L<errstr> or failure.
 
 =cut
 
@@ -273,9 +284,11 @@ sub restart {
     my $proc;
     
     if($self->has_process and !$self->stop) {
+        $self->errstr("could not stop server");
         return undef;
     }
     unless($self->start) {
+        $self->errstr("could not start server");
         return undef;
     }
 
@@ -284,12 +297,9 @@ sub restart {
 
 =head2 status
 
- $string = $self->status;
+ $str = $self->status;
 
-Returns the status of the DHCPd server:
-
- stopped
- running
+Returns the status of the DHCPd server: "stopped" or "running".
 
 =cut
 
@@ -310,37 +320,44 @@ sub status {
  $bool = $self->test("config");
  $bool = $self->test("leases");
 
-Will test either config or leases file.
-
- 1:     OK
- undef: Failed. Check errstr()
+Will test either the config or leases file. It returns a boolean value
+which indicates if it is valid or not: True means it is valid, while
+false means it is invalid. Check L</errstr> on failure - it will contain
+a descriptive string from either this module, C<$!> or the exit value
+(integer stored as a string).
 
 =cut
 
 sub test {
     my $self = shift;
     my $what = shift || q();
-    my $exit;
+    my($child_error, $errno, $output);
 
     if($what eq 'config') {
         my $tmp = File::Temp->new;
         print $tmp $self->config->generate;
-        $exit = $self->_run('-t', '-cf', $tmp->filename);
+        $output = $self->_run('-t', '-cf', $tmp->filename);
+        ($child_error, $errno) = ($?, $!);
     }
     elsif($what eq 'leases') {
-        $exit = $self->_run('-t', '-lf', $self->leases->file);
+        $output = $self->_run('-t', '-lf', $self->leases->file);
+        ($child_error, $errno) = ($?, $!);
     }
     else {
         $self->errstr('Invalid argument');
         return;
     }
 
-    if($exit and $exit == -1) {
-        $self->errstr($!);
+    # let's set this anyway...
+    $self->errstr($output);
+
+    if($child_error and $child_error == -1) {
+        $self->errstr($errno);
+        ($!, $?) = ($errno, $child_error);
         return;
     }
-    elsif($exit) {
-        $self->errstr($exit >> 8);
+    elsif($child_error) {
+        ($!, $?) = ($errno, $child_error);
         return;
     }
 
@@ -350,32 +367,34 @@ sub test {
 sub _run {
     my $self = shift;
     my @args = @_;
-    my $exit;
 
-    local *OLDERR;
-    local *OLDOUT;
-    open OLDERR, ">&", \*STDERR;
-    open OLDOUT, ">&", \*STDOUT;
-    close STDERR;
-    close STDOUT;
+    pipe my $reader, my $writer or return '';
 
-    $exit = system $self->binary, @args;
+    if(my $pid = fork) { # parent
+        close $writer;
+        wait; # for child process...
+        local $/;
+        return readline $reader;
+    }
+    elsif(defined $pid) { # child
+        close $reader;
+        open STDERR, '>&', $writer or confess $!;
+        open STDOUT, '>&', $writer or confess $!;
+        { exec $self->binary, @args }
+        confess "Exec() failed";
+    }
 
-    open STDERR, ">&", \*OLDERR;
-    open STDOUT, ">&", \*OLDOUT;
-
-    return $exit;
+    return ''; # fork failed. check $!
 }
 
 # used from attributes
 sub _build_child_obj {
     my $type = shift;
     my $self = shift;
-    my $args = shift || {};
 
-    eval "require Net::ISC::DHCPd::$type" or confess $@;
+    Class::MOP::load_class("Net::ISC::DHCPd::$type");
 
-    return "Net::ISC::DHCPd::$type"->new($args);
+    return "Net::ISC::DHCPd::$type"->new(@_);
 }
 
 =head1 BUGS
