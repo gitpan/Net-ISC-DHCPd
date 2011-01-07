@@ -6,7 +6,7 @@ Net::ISC::DHCPd - Interacts with ISC DHCPd
 
 =head1 VERSION
 
-0.09
+0.10
 
 =head1 SYNOPSIS
 
@@ -18,25 +18,7 @@ Net::ISC::DHCPd - Interacts with ISC DHCPd
 
     $self->test('config') or die $self->errstr;
 
-    # start the dhcpd server
-    $dhcpd->start({
-        user => 'john-doe',
-        group => 'users',
-        interfaces => 'eth0',
-    }) or die $dhcpd->errstr;
-    print $dhcpd->status;
-
-    $dhcpd->restart or die $dhcpd->errstr;
-    print $dhcpd->status;
-
-    $dhcpd->stop or die $dhcpd->errstr;
-    print $dhcpd->status;
-
 See the tests bundled to this distribution for more examples.
-
-This module is subject for a major rewrite. Patches and comments
-are welcome - reason for this is that L<Net::ISC::DHCPd::Process>
-does not work as expected.
 
 =head1 DESCRIPTION
 
@@ -56,12 +38,10 @@ L<the man pages|http://www.google.com/search?q=man+dhcpd>.
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Path::Class qw(File);
-use Net::ISC::DHCPd::Process;
 use Net::ISC::DHCPd::Types ':all';
 use File::Temp;
-use Path::Class::Dir;
 
-our $VERSION = '0.09';
+our $VERSION = eval '0.10';
 
 =head1 ATTRIBUTES
 
@@ -130,40 +110,6 @@ has binary => (
     default => 'dhcpd3',
 );
 
-=head2 pidfile
-
-This attribute holds a L<Path::Class::File> object to the dhcpd binary.
-It is read-only and the default is "/var/run/dhcp3-server/dhcpd.pid".
-
-=cut
-
-has pidfile => (
-    is => 'ro',
-    isa => File,
-    default => sub {
-        Path::Class::File->new('', 'var', 'run', 'dhcp3-server', 'dhcpd.pid');
-    },
-);
-
-=head2 process
-
-This attribute holds a read-only L<Net::ISC::DHCPd::Process> object.
-It can be set from the constructor, using either an object or a hash-ref.
-The hash-ref will then be passed on to the constructor.
-
-=cut
-
-has process => (
-    is => 'rw',
-    isa => ProcessObject,
-    coerce => 1,
-    lazy_build => 1,
-);
-
-sub _build_process {
-    confess 'process() cannot be build. Usage: $self->process($process_obj)';
-}
-
 =head2 errstr
 
 Holds the last know error as a plain string.
@@ -177,143 +123,6 @@ has errstr => (
 );
 
 =head1 METHODS
-
-=head2 start
-
-    $any = $self->start(\%args);
-
-Will start the dhcpd server, as long as there is no existing process.
-See L</SYNOPSIS> for example. C<%args> can have C<user>, C<group> and
-C<interfaces> which all points to strings. This method returns and
-integer or undef: "1" means "started". "0" means "already running"
-and C<undef> means failed to start the server. Check L</errstr> on
-failure.
-
-TODO: Enable it to start the server as a different user/group.
-
-=cut
-
-sub start {
-    my $self = shift;
-    my $args = shift || {};
-    my($user, $group);
-
-    if($self->has_process and $self->process->kill(0)) {
-        $self->errstr('allready running');
-        return 0;
-    }
-
-    $user = $args->{'user'}  || getpwuid $<;
-    $group = $args->{'group'} || getgrgid $<;
-    $args = [
-        '-f', # foreground
-        '-d', # log to STDERR
-        '-cf' => $self->config->file,
-        '-lf' => $self->leases->file,
-        '-pf' => $self->pidfile,
-        $args->{'interfaces'} || q(),
-    ];
-
-    $user = getpwnam $user;
-    $group = getgrnam $group;
-
-    MAKE_DIR:
-    for my $file ($self->config->file, $self->leases->file, $self->pidfile) {
-        my $dir = $file->dir;
-        next if -d $dir;
-
-        unless(eval { $dir->mkpath }) {
-            $self->errstr($@);
-            return;
-        }
-
-        unless(chown $user, $group, $dir) {
-            $self->errstr("could not chown($user, $group $dir): $!");
-            return;
-        }
-    }
-
-    $self->process({
-        program => $self->binary,
-        args => $args,
-        user => $user,
-        group => $group,
-    });
-
-    return $self->process ? 1 : undef;
-}
-
-=head2 stop
-
- $bool = $self->stop;
-
-This method will stop a running server. A true return value means that
-the server got stopped, while false means it could not be stopped.
-Check L<errstr> on failure.
-
-=cut
-
-sub stop {
-    my $self = shift;
-
-    unless($self->has_process) {
-        $self->errstr("no such process");
-        return undef;
-    }
-
-    unless($self->process->kill('TERM')) {
-        $self->errstr("Could not send signal to process");
-        return undef;
-    }
-
-    return 1;
-}
-
-=head2 restart
-
- $bool = $self->restart;
-
-This method will restart a running server or start a stopped server.
-A true return value means that the server got started, while false
-means it could not be started/restarted. Check L<errstr> or failure.
-
-=cut
-
-sub restart {
-    my $self = shift;
-    my $proc;
-    
-    if($self->has_process and !$self->stop) {
-        $self->errstr("could not stop server");
-        return undef;
-    }
-    unless($self->start) {
-        $self->errstr("could not start server");
-        return undef;
-    }
-
-    return 1;
-}
-
-=head2 status
-
- $str = $self->status;
-
-Returns the status of the DHCPd server: "stopped" or "running".
-
-=cut
-
-sub status {
-    my $self = shift;
-
-    if($self->has_process) {
-        if($self->process->kill(0)) {
-            return "running";
-        }
-    }
-
-    return "stopped";
-}
 
 =head2 test
 
