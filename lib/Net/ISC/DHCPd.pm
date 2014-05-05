@@ -1,12 +1,12 @@
 package Net::ISC::DHCPd;
 
-=head1 NAME 
+=head1 NAME
 
 Net::ISC::DHCPd - Interacts with ISC DHCPd
 
 =head1 VERSION
 
-0.14
+0.15
 
 =head1 SYNOPSIS
 
@@ -35,13 +35,14 @@ L<the man pages|http://www.google.com/search?q=man+dhcpd>.
 
 =cut
 
+use Class::Load;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Path::Class qw(File);
 use Net::ISC::DHCPd::Types ':all';
 use File::Temp;
 
-our $VERSION = eval '0.14';
+our $VERSION = eval '0.15';
 
 =head1 ATTRIBUTES
 
@@ -201,7 +202,7 @@ sub _build_child_obj {
     my $type = shift;
     my $self = shift;
 
-    Class::MOP::load_class("Net::ISC::DHCPd::$type");
+    Class::Load::load_class("Net::ISC::DHCPd::$type");
 
     return "Net::ISC::DHCPd::$type"->new(@_);
 }

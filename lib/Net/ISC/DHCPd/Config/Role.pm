@@ -18,6 +18,7 @@ This can be turned off by adding the line below before calling L</parse>.
 
 =cut
 
+use Class::Load;
 use Moose::Role;
 
 requires 'generate';
@@ -220,6 +221,10 @@ sub _build__filehandle {
         return $parent->_filehandle;
     }
 
+    if ($self->fh) {
+        return $self->fh;
+    }
+
     $file = $self->file;
 
     if($file->is_relative and !-e $file) {
@@ -241,7 +246,7 @@ sub BUILD {
     my($self, $args) = @_;
     my $meta = $self->meta;
 
-    for my $key (keys %$args) {
+    for my $key (sort keys %$args) {
         my $list = $args->{$key};
         my $method = "add_$key";
         $method =~ s/s$//;
@@ -321,6 +326,13 @@ sub parse {
             next LINE;
         }
 
+        # hack to fix parser for parenthesis on the next line
+        # subnet 10.0.0.96 netmask 255.255.255.224\n{
+        # technically we need to do multiline matching to get things right
+        if ($line =~ /^\s*{\s*$/) {
+            next LINE;
+        }
+
         if(warnings::enabled('net_isc_dhcpd_config_parse')) {
             chomp $line;
             warn sprintf qq[Could not parse "%s" at %s line %s\n],
@@ -377,7 +389,7 @@ sub create_children {
         my $name = lc +($class =~ /::(\w+)$/)[0];
         my $attr = $name .'s';
 
-        Class::MOP::load_class($class);
+        Class::Load::load_class($class);
 
         unless($meta->find_method_by_name($attr)) {
             $meta->add_method("add_${name}" => sub { shift->_add_child($class, @_) });

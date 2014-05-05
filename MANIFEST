@@ -46,18 +46,19 @@ lib/Net/ISC/DHCPd/Role/Lease.pm
 lib/Net/ISC/DHCPd/Types.pm
 Makefile.PL
 MANIFEST			This list of files
-MANIFEST.skip
-META.yml
+Net-ISC-DHCPd-0.15.tar.gz
 README
 t/00-load.t
 t/00-pod-coverage.t
 t/00-pod.t
 t/05-types.t
+t/10-config-from-handle.t
 t/10-config-generate.t
 t/10-config-parse.t
 t/10-leases-parse.t
 t/15-server.t
 t/20-omapi.t
+t/30-braces.t
 t/40-rt71372-group.t
 t/99-benchmark-config-parse.pl
 t/data/dhcpd.conf
