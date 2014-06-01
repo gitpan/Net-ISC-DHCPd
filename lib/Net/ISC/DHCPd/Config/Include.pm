@@ -13,6 +13,11 @@ An instance from this class, comes from / will produce:
 
     include "$file_attribute_value";
 
+Example:
+
+    my $include = $config->includes->[0];
+    $include->parse;
+
 =head1 SYNOPSIS
 
 See L<Net::ISC::DHCPd::Config/SYNOPSIS>.
@@ -25,13 +30,19 @@ use Path::Class::File;
 with 'Net::ISC::DHCPd::Config::Root';
 
 __PACKAGE__->create_children(qw/
+    Net::ISC::DHCPd::Config::Conditional
+    Net::ISC::DHCPd::Config::Class
+    Net::ISC::DHCPd::Config::SubClass
     Net::ISC::DHCPd::Config::Host
     Net::ISC::DHCPd::Config::Subnet
+    Net::ISC::DHCPd::Config::Subnet6
     Net::ISC::DHCPd::Config::SharedNetwork
     Net::ISC::DHCPd::Config::Function
     Net::ISC::DHCPd::Config::OptionSpace
+    Net::ISC::DHCPd::Config::OptionCode
     Net::ISC::DHCPd::Config::Option
     Net::ISC::DHCPd::Config::Key
+    Net::ISC::DHCPd::Config::Zone
     Net::ISC::DHCPd::Config::Group
     Net::ISC::DHCPd::Config::Block
     Net::ISC::DHCPd::Config::KeyValue
@@ -48,6 +59,10 @@ This attribute holds a boolean value. L</generate> will result in
 when false, and the included config if true. This attribute is false
 by default.
 
+Example:
+    $include->generate_with_include(1);
+    $include->generate;
+
 =cut
 
 has generate_with_include => (
@@ -56,7 +71,7 @@ has generate_with_include => (
     default => 0,
 );
 
-sub _build_regex { qr{^\s* include \s "([^"]+)" ;}x }
+sub _build_regex { qr{^\s* include \s+ "([^"]+)" ;}x }
 sub _build_root { shift->parent }
 
 sub _build__filehandle {
@@ -108,7 +123,7 @@ sub captured_to_args {
 
 =head2 generate
 
-This method can either result in C<include ...;> or the whole
+This method can either result in C<include ...;> line or the whole
 config of the included file. See L</generate_with_include> for how
 to control the behaviour.
 

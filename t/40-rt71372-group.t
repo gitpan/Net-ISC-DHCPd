@@ -18,7 +18,7 @@ plan tests => 14;
     is(scalar(@_=$config->includes), 1, "includes");
     is(scalar(@_=$config->keys), 1, "keys");
     is(scalar(@_=$config->keyvalues), 10, "key values");
-    is(scalar(@_=$config->options), 2, "options");
+    is(scalar(@_=$config->optioncodes), 2, "optioncodes");
     is(scalar(@_=$config->subnets), 1, "subnets");
     is(scalar(@_=$config->groups), 1, "groups");
     is(scalar(@_=$config->blocks), 0, "blocks");
@@ -27,7 +27,7 @@ plan tests => 14;
     is(scalar(@_=$subnets[0]->keyvalues), 2, "subnet -> keyvalues");
     is(scalar(@_=$subnets[0]->pools), 2, "subnet -> pools");
     is($subnets[0]->pools->[0]->_comments->[0], q(pool "Studenten_DHCP"), "subnet -> pool -> comment");
-    
+
     {
         local $TODO = 'should be parsed as class{}';
         is(scalar(@_=$subnets[0]->blocks), 2, "subnet -> blocks");

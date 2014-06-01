@@ -1,8 +1,8 @@
-package Net::ISC::DHCPd::Config::Subnet;
+package Net::ISC::DHCPd::Config::Subnet6;
 
 =head1 NAME
 
-Net::ISC::DHCPd::Config::Subnet - Subnet config parameter
+Net::ISC::DHCPd::Config::Subnet6 - Subnet6 config parameter
 
 =head1 DESCRIPTION
 
@@ -11,8 +11,7 @@ documentation.
 
 An instance from this class, comes from / will produce:
 
-    subnet $address_attribute_value \
-        netmask $address_attribute_value {
+    subnet6 $address_attribute_value {
         $options_attribute_value
         $filename_attribute_value
         $range_attribute_value
@@ -27,14 +26,14 @@ See L<Net::ISC::DHCPd::Config/SYNOPSIS>.
 =cut
 
 use Moose;
-use NetAddr::IP;
+use NetAddr::IP qw(:lower);
 
 with 'Net::ISC::DHCPd::Config::Role';
 
 __PACKAGE__->create_children(qw/
     Net::ISC::DHCPd::Config::Host
     Net::ISC::DHCPd::Config::Pool
-    Net::ISC::DHCPd::Config::Range
+    Net::ISC::DHCPd::Config::Range6
     Net::ISC::DHCPd::Config::Filename
     Net::ISC::DHCPd::Config::Option
     Net::ISC::DHCPd::Config::KeyValue
@@ -64,7 +63,7 @@ be only be one node in this list.
 
 before add_filename => sub {
     if(0 < int @{ $_[0]->filenames }) {
-        confess 'Subnet cannot have more than one filename';
+        confess 'Subnet6 cannot have more than one filename';
     }
 };
 
@@ -90,7 +89,7 @@ See L<Net::ISC::DHCPd::Config/regex>.
 
 =cut
 
-sub _build_regex { qr{^ \s* subnet \s+ (\S+) \s+ netmask \s+ (\S+) }x }
+sub _build_regex { qr{^ \s* subnet6 \s+ (\S+) }x }
 
 =head1 METHODS
 
@@ -101,7 +100,7 @@ See L<Net::ISC::DHCPd::Config::Role/captured_to_args>.
 =cut
 
 sub captured_to_args {
-    return { address => NetAddr::IP->new(join "/", @_[1,2]) };
+    return { address => NetAddr::IP->new($_[1]) };
 }
 
 =head2 generate
@@ -115,7 +114,7 @@ sub generate {
     my $net = $self->address;
 
     return(
-        'subnet ' .$net->addr .' netmask ' .$net->mask .' {',
+        'subnet6 ' .$net->canon() .'/' . $net->masklen() . ' {',
         $self->_generate_config_from_children,
         '}',
     );

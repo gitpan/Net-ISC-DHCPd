@@ -15,6 +15,8 @@ inc/Module/Install/WriteAll.pm
 lib/Net/ISC/DHCPd.pm
 lib/Net/ISC/DHCPd/Config.pm
 lib/Net/ISC/DHCPd/Config/Block.pm
+lib/Net/ISC/DHCPd/Config/Class.pm
+lib/Net/ISC/DHCPd/Config/Conditional.pm
 lib/Net/ISC/DHCPd/Config/Filename.pm
 lib/Net/ISC/DHCPd/Config/Function.pm
 lib/Net/ISC/DHCPd/Config/Group.pm
@@ -23,14 +25,18 @@ lib/Net/ISC/DHCPd/Config/Include.pm
 lib/Net/ISC/DHCPd/Config/Key.pm
 lib/Net/ISC/DHCPd/Config/KeyValue.pm
 lib/Net/ISC/DHCPd/Config/Option.pm
+lib/Net/ISC/DHCPd/Config/OptionCode.pm
 lib/Net/ISC/DHCPd/Config/OptionSpace.pm
-lib/Net/ISC/DHCPd/Config/OptionSpace/Option.pm
 lib/Net/ISC/DHCPd/Config/Pool.pm
 lib/Net/ISC/DHCPd/Config/Range.pm
+lib/Net/ISC/DHCPd/Config/Range6.pm
 lib/Net/ISC/DHCPd/Config/Role.pm
 lib/Net/ISC/DHCPd/Config/Root.pm
 lib/Net/ISC/DHCPd/Config/SharedNetwork.pm
+lib/Net/ISC/DHCPd/Config/SubClass.pm
 lib/Net/ISC/DHCPd/Config/Subnet.pm
+lib/Net/ISC/DHCPd/Config/Subnet6.pm
+lib/Net/ISC/DHCPd/Config/Zone.pm
 lib/Net/ISC/DHCPd/Leases.pm
 lib/Net/ISC/DHCPd/Leases/Lease.pm
 lib/Net/ISC/DHCPd/OMAPI.pm
@@ -46,7 +52,7 @@ lib/Net/ISC/DHCPd/Role/Lease.pm
 lib/Net/ISC/DHCPd/Types.pm
 Makefile.PL
 MANIFEST			This list of files
-Net-ISC-DHCPd-0.15.tar.gz
+META.yml
 README
 t/00-load.t
 t/00-pod-coverage.t
@@ -58,8 +64,16 @@ t/10-config-parse.t
 t/10-leases-parse.t
 t/15-server.t
 t/20-omapi.t
-t/30-braces.t
+t/30-rt60044-conditions.t
+t/30-rt67742-class.t
+t/30-rt68736-pool.t
+t/30-rt81269-key-and-zone.t
+t/30-rt81269-optionspace.t
+t/30-rt81382-braces.t
+t/40-dhcpv6.t
+t/40-named-group.t
 t/40-rt71372-group.t
+t/40-sharednetwork.t
 t/99-benchmark-config-parse.pl
 t/data/dhcpd.conf
 t/data/dhcpd.leases

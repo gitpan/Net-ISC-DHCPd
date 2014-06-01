@@ -1,8 +1,8 @@
-package Net::ISC::DHCPd::Config::Range;
+package Net::ISC::DHCPd::Config::Range6;
 
 =head1 NAME
 
-Net::ISC::DHCPd::Config::Range - Range config parameter
+Net::ISC::DHCPd::Config::Range6 - Range6 config parameter
 
 =head1 DESCRIPTION
 
@@ -11,7 +11,11 @@ documentation.
 
 An instance from this class, comes from / will produce:
 
-    range $lower_attribute_value $upper_attribute_value;
+    range6 $lower_attribute_value $upper_attribute_value;
+
+or
+
+    range6 $lower_attribute_value temporary;
 
 =head1 SYNOPSIS
 
@@ -25,7 +29,7 @@ plain strings in the future.
 =cut
 
 use Moose;
-use NetAddr::IP;
+use NetAddr::IP qw(:lower);
 
 with 'Net::ISC::DHCPd::Config::Role';
 
@@ -55,7 +59,19 @@ has lower => (
     isa => 'NetAddr::IP',
 );
 
-sub _build_regex { qr{^\s* range \s+ (\S+) \s+ (\S*) ;}x }
+=head2 temporary
+
+In place of an upper address range, you can specify that the range is for
+temporary addresses and it will be used like RFC4941
+
+=cut
+
+has temporary => (
+    is => 'ro',
+    isa => 'Bool',
+);
+
+sub _build_regex { qr{^\s* range6 \s+ (\S+) \s+ (\S*) \s* ;}x }
 
 =head1 METHODS
 
@@ -66,10 +82,16 @@ See L<Net::ISC::DHCPd::Config::Role/captured_to_args>.
 =cut
 
 sub captured_to_args {
-    return {
-        lower => NetAddr::IP->new($_[1]),
-        upper => NetAddr::IP->new($_[2]),
-    };
+    my $args;
+    $args->{'temporary'}=0;
+    if ($_[2] eq 'temporary') {
+        $args->{'temporary'}=1;
+    } else {
+        $args->{'upper'}=NetAddr::IP->new($_[2]);
+    }
+    $args->{'lower'}=NetAddr::IP->new($_[1]);
+
+    return $args;
 }
 
 =head2 generate
@@ -80,7 +102,7 @@ See L<Net::ISC::DHCPd::Config::Role/generate>.
 
 sub generate {
     my $self = shift;
-    return 'range ' .$self->lower->addr .' ' .$self->upper->addr .';';
+    return 'range6 ' .$self->lower->canon .' '. ($self->temporary ? 'temporary' : $self->upper->canon) .';';
 }
 
 =head1 COPYRIGHT & LICENSE

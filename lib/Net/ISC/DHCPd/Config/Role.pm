@@ -271,16 +271,43 @@ when possible.
 
 sub parse {
     my $self = shift;
+    my $linebuf = $_[1];
     my $fh = $self->_filehandle;
     my $endpoint = $self->endpoint;
     my($n, $pos, @comments);
+    my $lines = '';
+    my $line_from_array=0;
 
     LINE:
     while(1) {
+        my $line;
         $pos = $fh->getpos or die $!;
-        defined(my $line = readline $fh) or last LINE;
-        my $res;
-        $n++;
+        if (defined($linebuf->[0])) {
+            $line = pop(@{$linebuf});
+            $line_from_array=1;
+        } else {
+            defined($line = readline $fh) or last LINE;
+            $n++;
+            chomp $line;
+            $line_from_array=0;
+            # From here we need to preprocess the line to see if it can be broken
+            # into multiple lines.  Something like group { option test; }
+            # lines with comments can't be handled by this so we do them first
+            if($line =~ s/$COMMENT_RE//) {
+                push @comments, $line;
+                next LINE;
+            }
+
+            $line =~ s/ ([;\{\}])                                 # after semicolon or braces
+                        ([^;\n\r])                                # if there isn't a semicolon or return
+                        /$1\n$2/gx;                               # insert a newline
+
+            if ($line =~ /\n/) {
+                push(@{$linebuf}, reverse split(/\n/, $line));
+                next LINE;
+            }
+        }
+
 
         if($self->can('slurp')) {
             my $action = $self->slurp($line); # next or last
@@ -291,39 +318,22 @@ sub parse {
                 last LINE;
             }
             elsif($action eq 'backtrack') {
-                $fh->setpos($pos);
-                $n--;
+                if ($line_from_array) {
+                    push(@{$linebuf}, $line);
+                } else {
+                    $fh->setpos($pos);
+                    $n--;
+                }
                 last LINE;
             }
         }
         elsif($line =~ /^\s*$/o) {
             next LINE;
         }
-        elsif($line =~ s/$COMMENT_RE//) {
-            chomp $line;
-            push @comments, $line;
-            next LINE;
-        }
         elsif($line =~ $endpoint) {
             $self->captured_endpoint($1, $2, $3, $4); # urk...
             next LINE if($self->root == $self);
             last LINE;
-        }
-
-        CHILD:
-        for my $child ($self->children) {
-            my @c = $line =~ $child->regex or next CHILD;
-            my $add = 'add_' .lc +(ref($child) =~ /::(\w+)$/)[0];
-            my $args = $child->captured_to_args(@c);
-            my $obj;
-
-            $args->{'comments'} = [@comments];
-            @comments = ();
-            $obj = $self->$add($args);
-
-            $n += $obj->parse('recursive') if(@_ = $obj->children);
-
-            next LINE;
         }
 
         # hack to fix parser for parenthesis on the next line
@@ -333,10 +343,46 @@ sub parse {
             next LINE;
         }
 
+        # this is how we handle incomplete lines
+        # we need a space for lines like 'option\ndomain-name-servers'
+        if ($lines =~ /\S$/) {
+           $lines .= ' '.$line;
+        } else {
+            $lines = $line;
+        }
+
+        CHILD:
+        for my $child ($self->children) {
+            my @c = $lines =~ $child->regex or next CHILD;
+            my $add = 'add_' .lc +(ref($child) =~ /::(\w+)$/)[0];
+            my $args = $child->captured_to_args(@c);
+            my $obj;
+
+            $args->{'comments'} = [@comments];
+            @comments = ();
+            $lines = '';
+            $obj = $self->$add($args);
+
+            # the recursive statement is used for Include.pm
+            $n += $obj->parse('recursive', $linebuf) if(@_ = $obj->children);
+
+            next LINE;
+        }
+
+        # if we get here that means our parse failed.  If the incoming line
+        # doesn't have a semicolon then we can guess it's a partial line and
+        # append the next line to it.
+        # we could do this with Slurp but then everything would need to
+        # support slurp and odd semicolon handling.  If we figure out a way to
+        # merge the lines then the normal parser should be able to cover it.
+        if ($lines !~ /;/) {
+            next LINE;
+        }
+
+
         if(warnings::enabled('net_isc_dhcpd_config_parse')) {
-            chomp $line;
             warn sprintf qq[Could not parse "%s" at %s line %s\n],
-                $line,
+                $lines,
                 $self->root->file,
                 $fh->input_line_number
                 ;
@@ -361,7 +407,7 @@ sub captured_to_args {
 }
 
 =head2 captured_endpoint
- 
+
     $self->captured_endpoint(@list)
 
 Called when a L</endpoint> matches, with a list of captured strings.
@@ -386,15 +432,19 @@ sub create_children {
     my @children = @_;
 
     for my $class (@children) {
-        my $name = lc +($class =~ /::(\w+)$/)[0];
+        my $name = lc (($class =~ /::(\w+)$/)[0]);
         my $attr = $name .'s';
+
+        # hack so the child method for class is classes instead of classs
+        $attr = $name . 'es' if ($name =~ /s$/);
+
 
         Class::Load::load_class($class);
 
         unless($meta->find_method_by_name($attr)) {
             $meta->add_method("add_${name}" => sub { shift->_add_child($class, @_) });
-            $meta->add_method("find_${name}s" => sub { shift->_find_children($class, @_) });
-            $meta->add_method("remove_${name}s" => sub { shift->_remove_children($class, @_) });
+            $meta->add_method("find_${attr}" => sub { shift->_find_children($class, @_) });
+            $meta->add_method("remove_${attr}" => sub { shift->_remove_children($class, @_) });
             $meta->add_method($attr => sub {
                 my $self = shift;
                 return $self->_set_children($class, @_) if(@_);

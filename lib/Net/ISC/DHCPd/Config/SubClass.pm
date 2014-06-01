@@ -1,8 +1,8 @@
-package Net::ISC::DHCPd::Config::KeyValue;
+package Net::ISC::DHCPd::Config::SubClass;
 
 =head1 NAME
 
-Net::ISC::DHCPd::Config::KeyValue - Misc option config parameter
+Net::ISC::DHCPd::Config::Subclass - Subclass config parameter
 
 =head1 DESCRIPTION
 
@@ -12,12 +12,7 @@ documentation.
 An instance from this class, comes from / will produce one of the
 lines below, dependent on L</quoted>.
 
-    $name_attribute_value "$value_attribute_value";
-    $name_attribute_value $value_attribute_value;
-
-This means that this class represents "anything" that does not
-fall into any of the other categories and can be expressed as a
-key-value pair.
+    subclass "$name" "$value";
 
 =head1 SYNOPSIS
 
@@ -33,7 +28,7 @@ with 'Net::ISC::DHCPd::Config::Role';
 
 =head2 name
 
-Name of the option - See L</DESCRIPTION> for details.
+Name of the subclass - See L</DESCRIPTION> for details.
 
 =cut
 
@@ -44,7 +39,7 @@ has name => (
 
 =head2 value
 
-Value of the option - See L</DESCRIPTION> for details.
+Value of the subclass - See L</DESCRIPTION> for details.
 
 =cut
 
@@ -55,7 +50,7 @@ has value => (
 
 =head2 quoted
 
-This flag tells if the option value should be quoted or not.
+This flag tells if the subclass value should be quoted or not.
 
 =cut
 
@@ -64,7 +59,18 @@ has quoted => (
     isa => 'Bool',
 );
 
-sub _build_regex { qr{^\s* ([\w-]+) \s+ (.*) ;}x }
+=head2 namequoted
+
+This flag tells if the subclass name should be quoted or not.
+
+=cut
+
+has namequoted => (
+    is => 'ro',
+    isa => 'Bool',
+);
+
+sub _build_regex { qr{^\s*subclass \s+ ([\w-]+|".*?") \s+ (.*) ;}x }
 
 =head1 METHODS
 
@@ -79,13 +85,16 @@ sub captured_to_args {
     my $name   = shift;
     my $value  = shift;
     my $quoted = 0;
+    my $namequoted = 0;
 
+    $namequoted = 1 if ($name =~ s/^"(.*)"$/$1/g);
     $quoted = 1 if($value =~ s/^"(.*)"$/$1/g);
 
     return {
         name   => $name,
         value  => $value,
         quoted => $quoted,
+        namequoted => $namequoted,
     };
 }
 
@@ -97,7 +106,9 @@ See L<Net::ISC::DHCPd::Config::Role/generate>.
 
 sub generate {
     my $self  = shift;
-    my $format = $self->quoted ? qq(%s "%s";) : qq(%s %s;);
+    my $format = "subclass ";
+    $format .= $self->namequoted ? qq("%s" ) : qq(%s );
+    $format .= $self->quoted ? qq("%s";) : qq(%s;);
 
     return sprintf $format, $self->name, $self->value;
 }
