@@ -1,17 +1,18 @@
-package Net::ISC::DHCPd::Config::Filename;
+package Net::ISC::DHCPd::Config::Host::FixedAddress;
 
 =head1 NAME
 
-Net::ISC::DHCPd::Config::Filename - Filename config parameter
+Net::ISC::DHCPd::Config::Host::FixedAddress - IP address for Hosts
 
 =head1 DESCRIPTION
 
 See L<Net::ISC::DHCPd::Config::Role> for methods and attributes without
 documentation.
 
-An instance from this class, comes from / will produce:
+An instance from this class, comes from / will produce one of the
+lines below
 
-    filename "$file_attribute_value";
+    fixed-address $value_attribute_value;
 
 =head1 SYNOPSIS
 
@@ -20,23 +21,20 @@ See L<Net::ISC::DHCPd::Config/SYNOPSIS>.
 =cut
 
 use Moose;
-use Path::Class::File;
-use MooseX::Types::Path::Class qw(File);
 
 with 'Net::ISC::DHCPd::Config::Role';
 
 =head1 ATTRIBUTES
 
-=head2 file
+=head2 value
 
-This attribute hold a L<Path::Class::File> object.
+Value of the option - See L</DESCRIPTION> for details.
 
 =cut
 
-has file => (
-    is => 'rw',
-    isa => File,
-    coerce => 1,
+has value => (
+    is => 'ro',
+    isa => 'Str',
 );
 
 =head2 regex
@@ -45,7 +43,7 @@ See L<Net::ISC::DHCPd::Config::Role/regex>.
 
 =cut
 
-sub regex { qr{^\s* filename \s+ (\S+) ;}x }
+sub regex { qr{^\s* fixed-address \s+ (.*) ;}x }
 
 =head1 METHODS
 
@@ -56,7 +54,11 @@ See L<Net::ISC::DHCPd::Config::Role/captured_to_args>.
 =cut
 
 sub captured_to_args {
-    return { file => Path::Class::File->new($_[0]) };
+    my $value  = shift;
+
+    return {
+        value  => $value,
+    };
 }
 
 =head2 generate
@@ -66,7 +68,8 @@ See L<Net::ISC::DHCPd::Config::Role/generate>.
 =cut
 
 sub generate {
-    return 'filename ' .shift->file .';';
+    my $self  = shift;
+    return sprintf qq(fixed-address %s;), $self->value;
 }
 
 =head1 COPYRIGHT & LICENSE

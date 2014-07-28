@@ -71,7 +71,13 @@ has temporary => (
     isa => 'Bool',
 );
 
-sub _build_regex { qr{^\s* range6 \s+ (\S+) \s+ (\S*) \s* ;}x }
+=head2 regex
+
+See L<Net::ISC::DHCPd::Config::Role/regex>.
+
+=cut
+
+sub regex { qr{^\s* range6 \s+ (\S+) \s+ (\S*) \s* ;}x }
 
 =head1 METHODS
 
@@ -84,12 +90,12 @@ See L<Net::ISC::DHCPd::Config::Role/captured_to_args>.
 sub captured_to_args {
     my $args;
     $args->{'temporary'}=0;
-    if ($_[2] eq 'temporary') {
+    if ($_[1] eq 'temporary') {
         $args->{'temporary'}=1;
     } else {
-        $args->{'upper'}=NetAddr::IP->new($_[2]);
+        $args->{'upper'}=NetAddr::IP->new($_[1]);
     }
-    $args->{'lower'}=NetAddr::IP->new($_[1]);
+    $args->{'lower'}=NetAddr::IP->new($_[0]);
 
     return $args;
 }
@@ -102,7 +108,7 @@ See L<Net::ISC::DHCPd::Config::Role/generate>.
 
 sub generate {
     my $self = shift;
-    return 'range6 ' .$self->lower->canon .' '. ($self->temporary ? 'temporary' : $self->upper->canon) .';';
+    return 'range6 ' .$self->lower->short .' '. ($self->temporary ?  'temporary' : $self->upper->short) .';';
 }
 
 =head1 COPYRIGHT & LICENSE

@@ -30,13 +30,13 @@ requires:
   MooseX::Types: 0.12
   MooseX::Types::Path::Class: 0.05
   NetAddr::IP: 4
-  POE::Filter::DHCPd::Lease: 0.06
+  POE::Filter::DHCPd::Lease: 0.0701
   Path::Class: 0.19
   Time::HiRes: 1.9
-  perl: 5.8.3
+  perl: 5.12.5
 resources:
-  bugtracker: http://rt.cpan.org/NoAuth/Bugs.html?Dist=Net-ISC-DHCPd
+  bugtracker: https://github.com/jhthorsen/net-isc-dhcpd/issues
   homepage: http://search.cpan.org/dist/Net-ISC-DHCPd
   license: http://dev.perl.org/licenses/
   repository: git://github.com/jhthorsen/net-isc-dhcpd.git
-version: 0.17
+version: 0.1703

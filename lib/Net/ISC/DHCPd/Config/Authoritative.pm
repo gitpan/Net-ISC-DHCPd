@@ -1,17 +1,18 @@
-package Net::ISC::DHCPd::Config::Filename;
+package Net::ISC::DHCPd::Config::Authoritative;
 
 =head1 NAME
 
-Net::ISC::DHCPd::Config::Filename - Filename config parameter
+Net::ISC::DHCPd::Config::Authoritative - Yeah, it's a special parser for one statement
 
 =head1 DESCRIPTION
 
 See L<Net::ISC::DHCPd::Config::Role> for methods and attributes without
 documentation.
 
-An instance from this class, comes from / will produce:
+An instance from this class, comes from / will produce one of the
+lines below, dependent on L</quoted>.
 
-    filename "$file_attribute_value";
+    authoritative;
 
 =head1 SYNOPSIS
 
@@ -20,23 +21,20 @@ See L<Net::ISC::DHCPd::Config/SYNOPSIS>.
 =cut
 
 use Moose;
-use Path::Class::File;
-use MooseX::Types::Path::Class qw(File);
 
 with 'Net::ISC::DHCPd::Config::Role';
 
 =head1 ATTRIBUTES
 
-=head2 file
+=head2 name
 
-This attribute hold a L<Path::Class::File> object.
+Name of the option - See L</DESCRIPTION> for details.
 
 =cut
 
-has file => (
-    is => 'rw',
-    isa => File,
-    coerce => 1,
+has space => (
+    is => 'ro',
+    isa => 'Str',
 );
 
 =head2 regex
@@ -44,8 +42,7 @@ has file => (
 See L<Net::ISC::DHCPd::Config::Role/regex>.
 
 =cut
-
-sub regex { qr{^\s* filename \s+ (\S+) ;}x }
+sub regex { qr{^\s* authoritative (\s*) ;}x }
 
 =head1 METHODS
 
@@ -56,7 +53,11 @@ See L<Net::ISC::DHCPd::Config::Role/captured_to_args>.
 =cut
 
 sub captured_to_args {
-    return { file => Path::Class::File->new($_[0]) };
+    my $space  = shift;
+
+    return {
+        space  => $space,
+    };
 }
 
 =head2 generate
@@ -66,7 +67,8 @@ See L<Net::ISC::DHCPd::Config::Role/generate>.
 =cut
 
 sub generate {
-    return 'filename ' .shift->file .';';
+    my $self  = shift;
+    return sprintf qq(authoritative%s;), $self->space;
 }
 
 =head1 COPYRIGHT & LICENSE

@@ -1,6 +1,6 @@
 package Net::ISC::DHCPd::Leases;
 
-=head1 NAME 
+=head1 NAME
 
 Net::ISC::DHCPd::Leases - Parse ISC DHCPd leases
 
@@ -75,13 +75,25 @@ has file => (
     },
 );
 
+has fh => (
+    is => 'rw',
+    isa => 'FileHandle',
+    required => 0,
+);
+
 has _filehandle => (
     is => 'ro',
-    isa => 'IO::File',
     lazy_build => 1,
 );
 
-sub _build__filehandle { shift->file->openr }
+sub _build__filehandle {
+    my $self = shift;
+    if ($self->fh) {
+        return $self->fh;
+    }
+
+    $self->file->openr;
+}
 
 __PACKAGE__->meta->add_method(filehandle => sub {
     Carp::cluck('->filehandle is replaced with private attribute _filehandle');
@@ -110,19 +122,16 @@ sub parse {
     my $parser = $self->_parser;
     my $n = 0;
 
-    LINE:
-    while(++$n) {
-        my $line = readline $fh;
-
-        if(not defined $line) {
-            $n--;
-            last LINE;
-        }
+    while(my $line = readline $fh) {
+        $n++;
 
         $parser->get_one_start([$line]);
-
-        if($line =~ $POE::Filter::DHCPd::Lease::END) {
-            $self->add_lease( @{ $parser->get_one } );
+        if ($line =~ /^\s*}/) {
+            my $leases = $parser->get_one;
+            #print scalar @$leases;
+            if (@$leases) {
+                $self->add_lease($leases->[0]);
+            }
         }
     }
 

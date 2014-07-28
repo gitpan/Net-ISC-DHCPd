@@ -143,15 +143,8 @@ removed.
 
 =cut
 
-has children => (
-    is => 'ro',
-    isa => 'ArrayRef',
-    lazy => 1,
-    auto_deref => 1,
-    builder => '_build_children',
-);
-
-sub _build_children { [] }
+# should be overridden by anything that has children
+sub children { }
 
 # actual children
 has _children => (
@@ -184,13 +177,9 @@ has _comments => (
 Regex used to scan a line of config text, which then spawns an
 a new node to the config tree. This is used inside l</parse>.
 
-=cut
+THIS IS A STATIC METHOD.  SELF is not used.
 
-has regex => (
-    is => 'ro',
-    isa => 'RegexpRef',
-    builder => '_build_regex',
-);
+=cut
 
 =head2 endpoint
 
@@ -233,6 +222,27 @@ sub _build__filehandle {
 
     return $file->openr;
 }
+
+=head2 filename_callback
+
+Callback for changing file paths when include files are on different relative paths.
+
+    # here is an example:
+    my $cb = sub {
+        my $file = shift;
+        print "We're in callback and file is $file\n";
+        if ($file =~ /catphotos/) {
+            return "/dog.conf";
+        }
+    };
+
+=cut
+
+has filename_callback => (
+    is => 'rw',
+    isa => 'CodeRef',
+);
+
 
 =head1 METHODS
 
@@ -335,11 +345,7 @@ sub parse {
             next LINE if($self->root == $self);
             last LINE;
         }
-
-        # hack to fix parser for parenthesis on the next line
-        # subnet 10.0.0.96 netmask 255.255.255.224\n{
-        # technically we need to do multiline matching to get things right
-        if ($line =~ /^\s*{\s*$/) {
+        elsif ($line =~ /^\s*{\s*$/) {
             next LINE;
         }
 
@@ -353,9 +359,11 @@ sub parse {
 
         CHILD:
         for my $child ($self->children) {
-            my @c = $lines =~ $child->regex or next CHILD;
-            my $add = 'add_' .lc +(ref($child) =~ /::(\w+)$/)[0];
-            my $args = $child->captured_to_args(@c);
+            my $regex = $child->can('regex');
+            my @c = $lines =~ $regex->() or next CHILD;
+            my $add = 'add_' .lc +($child =~ /::(\w+)$/)[0];
+            my $method = $child->can('captured_to_args');
+            my $args = $method->(@c);
             my $obj;
 
             $args->{'comments'} = [@comments];
@@ -399,6 +407,8 @@ sub parse {
 Called when a L</regex> matches, with a list of captured strings.
 This method then returns a hash-ref passed on to the constructor when
 a new node in the object graph is constructed.
+
+THIS IS A STATIC METHOD.  SELF is not used.
 
 =cut
 
@@ -453,8 +463,6 @@ sub create_children {
         }
     }
 
-    $meta->add_method(_build_children => sub { [ map { $_->new } @children ] });
-
     return \@children;
 }
 
@@ -485,20 +493,7 @@ sub _add_child {
         $child = $class->new(parent => $self, %$child);
     }
 
-    # make sure children are grouped
-    for my $n (reverse 0..@$children-1) {
-        if($class eq blessed $children->[0]) {
-            splice @$children, $n + 1, 0, $child;
-            $children = undef;
-            last;
-        }
-    }
-
-    # append child at end unless sibling was found
-    if($children) {
-        push @$children, $child;
-    }
-
+    push @$children, $child;
     return $child;
 }
 
@@ -547,6 +542,42 @@ sub _remove_children {
     }
 
     return @removed;
+}
+
+
+=head2 find_all_children
+
+Loops through all child nodes with recursion looking for nodes of "class"
+type.  Returns an array of those nodes.  You can use the full classname or
+just the end part.  For subclasses like Host::FixedAddress you would need to
+use the whole name.
+
+    my @subnet = $config->find_all_children('subnet');
+
+=cut
+
+sub find_all_children {
+    my $self = shift;
+    my $class = shift;
+    my @children;
+
+    if ($class !~ /::/) {
+        # strip plural if they put it.
+        $class =~ s/s\z//;
+        $class =~ s/(class|address)e/$1/;
+        $class = 'Net::ISC::DHCPd::Config::' . ucfirst(lc($class));
+    }
+
+    for my $child (@{ $self->_children }) {
+        if (ref($child) eq $class) {
+            push(@children, $child);
+        }
+
+        if ($child->_children) {
+            push(@children, $child->find_all_children($class));
+        }
+    }
+    return @children;
 }
 
 =head2 generate_config_from_children

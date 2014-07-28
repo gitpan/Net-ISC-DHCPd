@@ -55,7 +55,13 @@ has lower => (
     isa => 'NetAddr::IP',
 );
 
-sub _build_regex { qr{^\s* range \s+ (\S+) \s+ (\S*) ;}x }
+=head2 regex
+
+See L<Net::ISC::DHCPd::Config::Role/regex>.
+
+=cut
+
+sub regex { qr{^\s* range \s+ (\S+) (?:\s+ (\S*))? ;}x }
 
 =head1 METHODS
 
@@ -66,10 +72,15 @@ See L<Net::ISC::DHCPd::Config::Role/captured_to_args>.
 =cut
 
 sub captured_to_args {
-    return {
-        lower => NetAddr::IP->new($_[1]),
-        upper => NetAddr::IP->new($_[2]),
-    };
+
+    if (!defined($_[1])) {
+        return { lower => NetAddr::IP->new($_[0]) };
+    } else {
+        return {
+            lower => NetAddr::IP->new($_[0]),
+            upper => NetAddr::IP->new($_[1]),
+        };
+    }
 }
 
 =head2 generate
@@ -80,7 +91,11 @@ See L<Net::ISC::DHCPd::Config::Role/generate>.
 
 sub generate {
     my $self = shift;
-    return 'range ' .$self->lower->addr .' ' .$self->upper->addr .';';
+    if (defined($self->upper)) {
+        return 'range ' .$self->lower->addr .' ' .$self->upper->addr .';';
+    } else {
+        return 'range ' .$self->lower->addr.';';
+    }
 }
 
 =head1 COPYRIGHT & LICENSE
